@@ -1,0 +1,20 @@
+CREATE TABLE jobs (
+    id UUID PRIMARY KEY,
+    company_id UUID NOT NULL,
+    recruiter_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    employment_type VARCHAR(50) NOT NULL,
+    experience_min INT,
+    experience_max INT,
+    location VARCHAR(150),
+    remote_type VARCHAR(50),
+    salary_min NUMERIC(12,2),
+    salary_max NUMERIC(12,2),
+    status VARCHAR(30) NOT NULL,
+    application_deadline TIMESTAMP,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_jobs_company FOREIGN KEY (company_id) REFERENCES companies(id),
+    CONSTRAINT fk_jobs_recruiter FOREIGN KEY (recruiter_id) REFERENCES users(id)
+);
