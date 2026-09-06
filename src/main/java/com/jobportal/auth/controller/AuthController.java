@@ -44,7 +44,11 @@ public class AuthController {
     }
     
     @GetMapping("/me")
-    public ResponseEntity<MeResponse> me(Authentication authentication) {
+    public ResponseEntity<?> me(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String email = authentication.getName();
 
         String role = authentication.getAuthorities()

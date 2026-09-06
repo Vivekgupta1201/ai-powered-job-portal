@@ -8,6 +8,9 @@ import com.jobportal.auth.dto.RegisterRequest;
 import com.jobportal.auth.entity.Role;
 import com.jobportal.auth.entity.User;
 import com.jobportal.auth.entity.UserStatus;
+import com.jobportal.common.exception.ConflictException;
+import com.jobportal.common.exception.NotFoundException;
+import com.jobportal.common.exception.UnauthorizedException;
 import com.jobportal.auth.repository.RoleRepository;
 import com.jobportal.auth.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,15 +43,17 @@ this.jwtService = jwtService;
     }
 
     private AuthResponse registerUser(RegisterRequest request, String roleName) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email is already registered");
+        String email = normalizeEmail(request.getEmail());
+
+        if (userRepository.existsByEmail(email)) {
+            throw new ConflictException("Email is already registered");
         }
 
         Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
 
         User user = new User();
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setStatus(UserStatus.ACTIVE);
         user.getRoles().add(role);
@@ -63,24 +68,29 @@ this.jwtService = jwtService;
     }
     
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        String email = normalizeEmail(request.getEmail());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
         boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
 
         if (!passwordMatches) {
-            throw new RuntimeException("Invalid email or password");
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         String role = user.getRoles()
                 .stream()
                 .findFirst()
                 .map(Role::getName)
-                .orElse("ROLE_JOB_SEEKER");
+                .orElseThrow(() -> new UnauthorizedException("User role is missing"));
 
         String token = jwtService.generateToken(user);
 
         return new LoginResponse(token, user.getEmail(), role);
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
    
 

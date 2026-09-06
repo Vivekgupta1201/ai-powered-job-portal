@@ -7,6 +7,7 @@ import com.jobportal.resume.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -53,5 +54,16 @@ public class ResumeController {
     @PreAuthorize("hasRole('JOB_SEEKER')")
     public ResponseEntity<ResumeResponse> get(Authentication authentication, @PathVariable UUID resumeId) {
         return ResponseEntity.ok(resumeService.getResume(authentication.getName(), resumeId));
+    }
+
+    @GetMapping("/{resumeId}/download")
+    @PreAuthorize("hasAnyRole('JOB_SEEKER', 'RECRUITER')")
+    public ResponseEntity<org.springframework.core.io.Resource> download(Authentication authentication,
+                                                                           @PathVariable UUID resumeId) {
+        ResumeService.ResumeFile file = resumeService.downloadResume(authentication.getName(), resumeId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.fileName() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, file.contentType())
+                .body(file.resource());
     }
 }

@@ -9,6 +9,10 @@ import com.jobportal.application.entity.ApplicationStatusHistory;
 import com.jobportal.application.repository.ApplicationRepository;
 import com.jobportal.application.repository.ApplicationStatusHistoryRepository;
 import com.jobportal.application.service.ApplicationService;
+import com.jobportal.assessment.entity.AssessmentAttempt;
+import com.jobportal.assessment.entity.AttemptStatus;
+import com.jobportal.assessment.repository.AssessmentAttemptRepository;
+import com.jobportal.assessment.repository.AssessmentRepository;
 import com.jobportal.auth.entity.User;
 import com.jobportal.auth.repository.UserRepository;
 import com.jobportal.common.exception.ConflictException;
@@ -35,6 +39,8 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
     private final RecruiterProfileRepository recruiterProfileRepository;
+    private final AssessmentRepository assessmentRepository;
+    private final AssessmentAttemptRepository assessmentAttemptRepository;
 
     @Override
     @Transactional
@@ -91,6 +97,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         if (!application.getJob().getRecruiter().getId().equals(recruiter.getId())) {
             throw new ConflictException("You are not allowed to modify this application");
         }
+        if (status == ApplicationStatus.SELECTED) {
+            AssessmentAttempt attempt = assessmentRepository.findByApplicationId(application.getId())
+                    .flatMap(assessment -> assessmentAttemptRepository
+                            .findByAssessmentIdAndCandidateId(assessment.getId(), application.getJobSeeker().getId()))
+                    .orElseThrow(() -> new ConflictException("Candidate must complete the assessment before selection"));
+            if (attempt.getStatus() != AttemptStatus.SUBMITTED || !Boolean.TRUE.equals(attempt.getPassed())) {
+                throw new ConflictException("Candidate must pass the assessment before selection");
+            }
+        }
         ApplicationStatus old = application.getStatus();
         application.setStatus(status);
         Application saved = applicationRepository.save(application);
@@ -130,6 +145,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private ApplicationSummaryResponse toSummary(Application application) {
         return new ApplicationSummaryResponse(
                 application.getId(),
+                application.getResume().getId(),
                 application.getJob().getTitle(),
                 application.getJob().getCompany().getName(),
                 application.getJobSeeker().getEmail(),

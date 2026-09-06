@@ -4,6 +4,8 @@ import com.jobportal.auth.entity.User;
 import com.jobportal.auth.repository.UserRepository;
 import com.jobportal.company.entity.Company;
 import com.jobportal.company.repository.CompanyRepository;
+import com.jobportal.common.exception.ConflictException;
+import com.jobportal.common.exception.NotFoundException;
 import com.jobportal.user.dto.CreateJobSeekerProfileRequest;
 import com.jobportal.user.dto.CreateRecruiterProfileRequest;
 import com.jobportal.user.dto.ProfileResponse;
@@ -32,7 +34,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         User user = findUserByEmail(email);
 
         if (jobSeekerProfileRepository.existsByUserId(user.getId())) {
-            throw new RuntimeException("Job seeker profile already exists");
+            throw new ConflictException("Job seeker profile already exists");
         }
 
         JobSeekerProfile profile = new JobSeekerProfile();
@@ -59,7 +61,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         User user = findUserByEmail(email);
 
         if (recruiterProfileRepository.existsByUserId(user.getId())) {
-            throw new RuntimeException("Recruiter profile already exists");
+            throw new ConflictException("Recruiter profile already exists");
         }
 
         Company company = new Company();
@@ -93,12 +95,12 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .map(profile -> buildJobSeekerResponse(user, profile))
                 .orElseGet(() -> recruiterProfileRepository.findByUserId(user.getId())
                         .map(profile -> buildRecruiterResponse(user, profile))
-                        .orElseThrow(() -> new RuntimeException("Profile not found for this user")));
+                        .orElseThrow(() -> new NotFoundException("Profile not found for this user")));
     }
 
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     private UserProfileResponse buildJobSeekerResponse(User user, JobSeekerProfile profile) {
@@ -143,7 +145,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 		 User user = findUserByEmail(email);
 
 		    JobSeekerProfile profile = jobSeekerProfileRepository.findByUserId(user.getId())
-		            .orElseThrow(() -> new RuntimeException("Job seeker profile not found"));
+		            .orElseThrow(() -> new NotFoundException("Job seeker profile not found"));
 
 		    profile.setFirstName(request.getFirstName());
 		    profile.setLastName(request.getLastName());
@@ -168,7 +170,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 		User user = findUserByEmail(email);
 
 	    RecruiterProfile profile = recruiterProfileRepository.findByUserId(user.getId())
-	            .orElseThrow(() -> new RuntimeException("Recruiter profile not found"));
+	            .orElseThrow(() -> new NotFoundException("Recruiter profile not found"));
 
 	    profile.setFirstName(request.getFirstName());
 	    profile.setLastName(request.getLastName());

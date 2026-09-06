@@ -40,3 +40,10 @@ target/
 .vscode/
 *.log
 uploads/
+
+# React / Vite generated files and local environment secrets
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example

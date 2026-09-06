@@ -2,6 +2,7 @@ package com.jobportal.resume.service.impl;
 
 import com.jobportal.auth.entity.User;
 import com.jobportal.auth.repository.UserRepository;
+import com.jobportal.application.repository.ApplicationRepository;
 import com.jobportal.common.exception.ConflictException;
 import com.jobportal.common.exception.NotFoundException;
 import com.jobportal.resume.dto.ResumeResponse;
@@ -15,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +34,7 @@ public class ResumeServiceImpl implements ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
 
     @Value("${app.resume.upload-dir:uploads/resumes}")
     private String uploadDir;
@@ -47,7 +51,11 @@ public class ResumeServiceImpl implements ResumeService {
     public ResumeUploadResponse saveResume(String email, MultipartFile file, String storageKey) {
         User user = findUser(email);
         try {
-            Path path = Paths.get(uploadDir, storageKey);
+            Path root = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Path path = root.resolve(storageKey).normalize();
+            if (!path.startsWith(root) || !storageKey.startsWith(user.getId() + "/")) {
+                throw new ConflictException("Invalid resume storage key");
+            }
             Files.createDirectories(path.getParent());
             Files.write(path, file.getBytes());
         } catch (IOException e) {
@@ -91,6 +99,27 @@ public class ResumeServiceImpl implements ResumeService {
         Resume resume = resumeRepository.findByIdAndJobSeekerId(resumeId, user.getId())
                 .orElseThrow(() -> new NotFoundException("Resume not found"));
         return toResponse(resume);
+    }
+
+    @Override
+    public ResumeFile downloadResume(String email, UUID resumeId) {
+        User currentUser = findUser(email);
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new NotFoundException("Resume not found"));
+        boolean owner = resume.getJobSeeker().getId().equals(currentUser.getId());
+        boolean authorizedRecruiter = applicationRepository
+                .existsByResumeIdAndJobRecruiterId(resumeId, currentUser.getId());
+        if (!owner && !authorizedRecruiter) {
+            throw new ConflictException("You are not allowed to view this resume");
+        }
+        Path root = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path path = root.resolve(resume.getStorageKey()).normalize();
+        if (!path.startsWith(root) || !Files.exists(path)) {
+            throw new NotFoundException("Resume file not found");
+        }
+        Resource resource = new FileSystemResource(path);
+        return new ResumeFile(resource, resume.getFileName(),
+                resume.getContentType() == null ? "application/octet-stream" : resume.getContentType());
     }
 
     private User findUser(String email) {

@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.core.io.Resource;
 
 public interface ResumeService {
     ResumeUploadUrlResponse createUploadTarget(String email, String fileName);
@@ -14,4 +15,7 @@ public interface ResumeService {
     List<ResumeResponse> listMyResumes(String email);
     ResumeResponse activateResume(String email, UUID resumeId);
     ResumeResponse getResume(String email, UUID resumeId);
+    ResumeFile downloadResume(String email, UUID resumeId);
+
+    record ResumeFile(Resource resource, String fileName, String contentType) { }
 }

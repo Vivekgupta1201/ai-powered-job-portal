@@ -10,6 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ApplicationSummaryResponse {
     private UUID id;
+    private UUID resumeId;
     private String jobTitle;
     private String companyName;
     private String seekerEmail;

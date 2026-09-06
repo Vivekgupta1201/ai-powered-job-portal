@@ -6,6 +6,7 @@ import com.jobportal.auth.entity.User;
 import com.jobportal.auth.repository.UserRepository;
 import com.jobportal.dashboard.dto.RecruiterDashboardResponse;
 import com.jobportal.dashboard.service.DashboardService;
+import com.jobportal.common.exception.NotFoundException;
 import com.jobportal.job.entity.JobStatus;
 import com.jobportal.job.repository.JobRepository;
 import com.jobportal.user.repository.RecruiterProfileRepository;
@@ -24,10 +25,10 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public RecruiterDashboardResponse recruiterDashboard(String email) {
         User recruiter = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         var recruiterProfile = recruiterProfileRepository.findByUserId(recruiter.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Recruiter profile not found"));
+                .orElseThrow(() -> new NotFoundException("Recruiter profile not found"));
 
         long totalJobs = jobRepository.findByRecruiterId(recruiter.getId()).size();
         long draftJobs = jobRepository.findByRecruiterId(recruiter.getId()).stream().filter(j -> j.getStatus() == JobStatus.DRAFT).count();
