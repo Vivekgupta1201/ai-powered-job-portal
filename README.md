@@ -1,10 +1,10 @@
 # AI-Powered Job Portal
 
-A production-oriented, modular **Job Portal Backend** built using **Java 21, Spring Boot, Spring Security, JWT, Spring Data JPA, PostgreSQL, and Flyway**.
+A production-oriented, modular **Job Portal Backend** built using **Java 21, Spring Boot, Spring Security, JWT, Spring Data JPA, PostgreSQL, Flyway, and Google Gemini AI**.
 
 The platform is designed to connect **Job Seekers** and **Recruiters** through a secure REST API architecture. Job seekers can create profiles, manage resumes, search for jobs, apply to positions, and participate in assessments. Recruiters can create companies, publish job openings, manage applicants, and create assessments.
 
-The system is designed with future **AI-powered recruitment capabilities** in mind, including resume parsing, skill extraction, candidate-job matching, AI-generated assessment questions, and intelligent candidate ranking.
+The backend includes **AI-powered assessment question generation using Google Gemini AI**. A job seeker's uploaded PDF resume and the relevant job description are provided to Gemini as context for generating assessment questions. Structured resume parsing, skill extraction, candidate-job matching, and intelligent candidate ranking remain future enhancements.
 
 ---
 
@@ -22,9 +22,9 @@ This project aims to provide a modular recruitment platform where:
 * Recruiters can use assessments to evaluate candidates.
 * Application statuses are tracked throughout the recruitment lifecycle.
 * The backend provides secure APIs using JWT authentication.
-* The architecture is prepared for future AI integration.
+* AI-powered assessment question generation using Google Gemini AI.
 
-The project currently focuses on building a strong backend foundation before expanding into frontend and AI capabilities.
+The project provides a modular backend for core recruitment workflows and includes a Gemini AI assessment-generation workflow. Frontend development and additional AI capabilities remain future enhancements.
 
 ---
 
@@ -206,7 +206,24 @@ src/main/java/com/jobportal
 │   ├── repository
 │   └── service
 │
+├── ai
+│   ├── config
+│   │   └── GeminiProperties.java
+│   ├── controller
+│   │   └── AiAssessmentController.java
+│   ├── dto
+│   │   ├── GenerateAssessmentRequest.java
+│   │   ├── GeneratedAssessmentResponse.java
+│   │   ├── GeneratedOptionResponse.java
+│   │   └── GeneratedQuestionResponse.java
+│   └── service
+│       ├── AiAssessmentService.java
+│       └── impl
+│           └── GeminiAssessmentServiceImpl.java
+│
 └── common
+    ├── config
+    │   └── JacksonConfig.java
     └── exception
 ```
 
@@ -535,15 +552,15 @@ Evaluate Answers
 Assessment Result
 ```
 
-The assessment architecture is also designed to support future AI-generated questions.
+The assessment architecture is complemented by a Gemini AI service that generates assessment questions using the uploaded PDF resume and job description as context. Separate structured resume parsing and candidate-job matching are not implemented yet.
 
 ---
 
 # 🤖 Planned AI Capabilities
 
-The long-term goal of the project is to introduce AI into the recruitment workflow.
+The project has started integrating AI into the recruitment workflow through Gemini-powered assessment question generation. Structured resume parsing and candidate-job matching are not implemented yet.
 
-Potential AI features include:
+Potential future AI features include:
 
 ## AI Resume Parsing
 
@@ -601,7 +618,11 @@ This can help recruiters identify candidates whose skills and experience are mor
 
 ## AI Assessment Generation
 
-A future version can generate questions based on:
+The backend currently integrates Google Gemini AI to generate assessment questions using a job seeker's uploaded PDF resume and the relevant job description as context. The AI assessment controller, service, configuration, and request/response DTOs support this workflow.
+
+This does **not** mean that resume parsing is implemented as a separate feature. The backend does not yet extract and store structured resume fields such as name, skills, education, experience, projects, or certifications, and it does not yet perform candidate-job skill matching or produce a structured recruiter-facing resume summary.
+
+Potential extensions to assessment generation include:
 
 * Job description
 * Required skills
@@ -807,6 +828,8 @@ Assessment endpoints are being developed as part of the assessment module and ma
 | Flyway            | Database migration               |
 | Lombok            | Boilerplate reduction            |
 | Maven             | Build and dependency management  |
+| Google Gemini AI   | AI-powered assessment generation |
+| Jackson            | JSON serialization and deserialization |
 
 ---
 
@@ -1027,7 +1050,7 @@ Recruiter creates an assessment and the candidate can attempt and submit it.
 * [ ] AI skill extraction
 * [ ] AI job matching
 * [ ] AI candidate ranking
-* [ ] AI assessment question generation
+* [x] AI assessment question generation using Google Gemini AI and resume/job-description context
 * [ ] AI interview question generation
 
 ## Phase 5 — Production Features
@@ -1052,6 +1075,7 @@ The project has progressed beyond the initial job portal backend foundation.
 
 ### Completed
 
+* Gemini-powered assessment question generation using uploaded PDF resume and job-description context
 * Authentication
 * JWT-based security
 * Role-based authorization
@@ -1064,15 +1088,20 @@ The project has progressed beyond the initial job portal backend foundation.
 * Recruiter dashboard
 * Assessment module foundation
 * Assessment database migration
+* Gemini AI assessment-generation controller and service
+* Structured AI assessment request/response DTOs
 * Centralized exception handling
+* Jackson configuration
 
 ### In Progress / Planned
 
 * Frontend integration
-* AI resume processing
-* AI candidate matching
-* AI assessment generation
+* Structured resume text extraction and parsing
+* Saving parsed resume details in the database
+* Candidate skill matching against job requirements
+* Recruiter-facing structured resume summaries
 * Advanced assessment functionality
+* AI interview question generation
 * Cloud file storage
 * Notifications
 * Production deployment
